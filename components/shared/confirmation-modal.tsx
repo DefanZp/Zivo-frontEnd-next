@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -36,7 +35,7 @@ export function ConfirmationModal({
             return;
         }
 
-        function handleKeyDown(event: KeyboardEvent) {
+        function handleKeyDown(event: KeyboardEvent) {  
             if (event.key === "Escape") {
                 onCancel();
             }

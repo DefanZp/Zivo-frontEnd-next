@@ -1,18 +1,24 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
-import "../globals.css";
+import { Suspense } from "react";
+import { Navbar } from "@/components/shared/navbar";
 
-const jakartaSans = Plus_Jakarta_Sans({
-    variable: "--font-jakarta-sans",
-    subsets: ["latin"],
-    display: "swap",
-});
-
-export default function ShopLayout({ children }: Readonly<{children: React.ReactNode;}>) {
+export default function ShopLayout({
+    children,
+}: {
+children: React.ReactNode 
+}) {
     return (
-        <div 
-            className={`${jakartaSans.variable} min-h-screen`}>
-
-            <main>{children}</main>
-        </div>
+        <>
+        <Suspense
+            fallback={
+                <div
+                    className="h-[80px]"
+                    aria-hidden="true"
+                />
+            }
+        >
+            <Navbar />
+        </Suspense>
+        <main>{children}</main>
+        </>
     );
 }

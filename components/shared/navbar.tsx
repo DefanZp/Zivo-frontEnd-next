@@ -7,23 +7,18 @@ import { usePathname, useRouter } from "next/navigation";
 import {
     ChevronDown,
     ClipboardList,
-    LayoutDashboard,
     LogOut,
     Menu,
-    Package,
     Settings,
     ShoppingBag,
     ShoppingCart,
     X,
 } from "lucide-react";
 
-import { authService } from "@/lib/services/auth";
+import { authService } from "@/lib/services/auth-service";
 import { useAuthStore } from "@/lib/stores/auth-store-provider";
-
-
 import type { User } from "@/types/auth";
 import { ConfirmationModal } from "./confirmation-modal";
-
 
 export function Navbar() {
     const router = useRouter();
@@ -43,7 +38,6 @@ export function Navbar() {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const isLoggedIn = user !== null && token !== null;
-    const isAdmin = user?.role === "admin";
 
     // Close menus when clicking outside the Navbar.
     useEffect(() => {
@@ -109,7 +103,7 @@ export function Navbar() {
             setIsLogoutModalOpen(false);
             setIsLoggingOut(false);
 
-            router.replace("/login");
+            router.replace("/auth/login");
         }
     }
 
@@ -132,28 +126,28 @@ export function Navbar() {
 
     return (
         <>
-            <div ref={navbarRef}>
-                {/* Announcement Bar */}
-                {isAuthReady && !isAdmin && (
-                    <div className="bg-ink-950 px-4 py-2.5 text-center text-ink-50">
-                        <div className="container mx-auto flex items-center justify-center gap-3">
-                            <p className="label-12m">
-                                Discover our latest arrivals -{" "}
-                                <Link
-                                    href="/products"
-                                    className="underline underline-offset-4 transition hover:text-ink-300"
-                                >
-                                    Check out new products
-                                </Link>
-                            </p>
-                        </div>
-                    </div>
-                )}
+            {/* Announcement Bar */}
+            <div className="bg-ink-950 px-4 py-2.5 text-center text-ink-50">
+                <div className="container mx-auto flex items-center justify-center gap-3">
+                    <p className="label-12m">
+                        Discover our latest arrivals -{" "}
+                        <Link
+                            href="/products"
+                            className="underline underline-offset-4 transition hover:text-ink-300"
+                        >
+                            Check out new products
+                        </Link>
+                    </p>
+                </div>
+            </div>
 
+            <div
+                ref={navbarRef}
+                className="sticky top-0 z-40"
+            >
                 {/* Main Navigation */}
-                <nav className="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur-md">
+                <nav className="border-b border-ink-100 bg-white/80 backdrop-blur-md">
                     <div className="container mx-auto flex h-[80px] items-center justify-between px-5 lg:px-0">
-
                         {/* Logo */}
                         <Link
                             href="/"
@@ -163,19 +157,13 @@ export function Navbar() {
                             <div className="w-[72px]">
                                 <Image
                                     src="/logo.png"
-                                    alt="Logo"
+                                    alt="Zivo"
                                     width={72}
                                     height={40}
                                     priority
                                     className="h-full w-full object-contain"
                                 />
                             </div>
-
-                            {isAuthReady && isAdmin && (
-                                <span className="rounded bg-ink-900 px-1.5 py-0.5 text-[10px] font-medium text-ink-50">
-                                    Admin
-                                </span>
-                            )}
                         </Link>
 
                         {/* Desktop Navbar */}
@@ -187,74 +175,33 @@ export function Navbar() {
                                 />
                             ) : (
                                 <>
-                                    {/* Admin Navigation */}
-                                    {isAdmin ? (
-                                        <>
-                                            <Link
-                                                href="/admin/dashboard"
-                                                className={getNavLinkClass("/admin/dashboard")}
-                                                onClick={closeMenus}
-                                            >
-                                                <LayoutDashboard size={16} />
-                                                Dashboard
-                                            </Link>
+                                    {/* Store Navigation */}
+                                    <Link
+                                        href="/products"
+                                        className={getNavLinkClass(
+                                            "/products",
+                                            true
+                                        )}
+                                        onClick={closeMenus}
+                                    >
+                                        <ShoppingBag size={16} />
+                                        Shop
+                                    </Link>
 
-                                            <Link
-                                                href="/admin/products"
-                                                className={getNavLinkClass("/admin/products")}
-                                                onClick={closeMenus}
-                                            >
-                                                <Package size={16} />
-                                                Products
-                                            </Link>
-
-                                            <Link
-                                                href="/admin/orders"
-                                                className={getNavLinkClass("/admin/orders")}
-                                                onClick={closeMenus}
-                                            >
-                                                <ClipboardList size={16} />
-                                                Orders
-                                            </Link>
-
-                                            <div className="mx-1 h-5 w-px bg-zinc-200" />
-
-                                            <Link
-                                                href="/products"
-                                                className={getNavLinkClass("/products", true)}
-                                                onClick={closeMenus}
-                                            >
-                                                <ShoppingBag size={16} />
-                                                Shop
-                                            </Link>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Link
-                                                href="/products"
-                                                className={getNavLinkClass("/products", true)}
-                                                onClick={closeMenus}
-                                            >
-                                                <ShoppingBag size={16} />
-                                                Shop
-                                            </Link>
-
-                                            {isLoggedIn && (
-                                                <Link
-                                                    href="/cart"
-                                                    className={getNavLinkClass("/cart")}
-                                                    onClick={closeMenus}
-                                                >
-                                                    <ShoppingCart size={16} />
-                                                    Cart
-                                                </Link>
-                                            )}
-                                        </>
+                                    {isLoggedIn && (
+                                        <Link
+                                            href="/cart"
+                                            className={getNavLinkClass("/cart")}
+                                            onClick={closeMenus}
+                                        >
+                                            <ShoppingCart size={16} />
+                                            Cart
+                                        </Link>
                                     )}
 
                                     <div className="mx-1 h-5 w-px bg-zinc-200" />
 
-                                    {/* User Dropdown */}
+                                    {/* User Menu */}
                                     {isLoggedIn && user ? (
                                         <div className="relative">
                                             <button
@@ -281,7 +228,9 @@ export function Navbar() {
                                                 <ChevronDown
                                                     size={16}
                                                     className={`text-ink-400 transition-transform duration-200 ${
-                                                        isProfileMenuOpen ? "rotate-180" : ""
+                                                        isProfileMenuOpen
+                                                            ? "rotate-180"
+                                                            : ""
                                                     }`}
                                                 />
                                             </button>
@@ -343,7 +292,7 @@ export function Navbar() {
                                         </div>
                                     ) : (
                                         <Link
-                                            href="/login"
+                                            href="/auth/login"
                                             onClick={closeMenus}
                                             className="flex items-center gap-1.5 rounded-lg bg-ink-900 px-3 py-1.5 paragraph-14r text-white transition hover:bg-ink-700"
                                         >
@@ -401,73 +350,31 @@ export function Navbar() {
                                         </div>
                                     )}
 
+                                    {/* Store Links */}
                                     <div className="flex flex-col gap-1">
-                                        {isAdmin ? (
-                                            <>
-                                                <Link
-                                                    href="/admin/dashboard"
-                                                    onClick={closeMenus}
-                                                    className={getNavLinkClass("/admin/dashboard")}
-                                                >
-                                                    <LayoutDashboard size={16} />
-                                                    Dashboard
-                                                </Link>
-
-                                                <Link
-                                                    href="/admin/products"
-                                                    onClick={closeMenus}
-                                                    className={getNavLinkClass("/admin/products")}
-                                                >
-                                                    <Package size={16} />
-                                                    Products
-                                                </Link>
-
-                                                <Link
-                                                    href="/admin/orders"
-                                                    onClick={closeMenus}
-                                                    className={getNavLinkClass("/admin/orders")}
-                                                >
-                                                    <ClipboardList size={16} />
-                                                    Orders
-                                                </Link>
-
-                                                <div className="my-1 border-t border-ink-100" />
-
-                                                <Link
-                                                    href="/products"
-                                                    onClick={closeMenus}
-                                                    className={getNavLinkClass("/products", true)}
-                                                >
-                                                    <ShoppingBag size={16} />
-                                                    Shop
-                                                </Link>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Link
-                                                    href="/products"
-                                                    onClick={closeMenus}
-                                                    className={getNavLinkClass("/products", true)}
-                                                >
-                                                    <ShoppingBag size={16} />
-                                                    Shop
-                                                </Link>
-
-                                                {isLoggedIn && (
-                                                    <Link
-                                                        href="/cart"
-                                                        onClick={closeMenus}
-                                                        className={getNavLinkClass("/cart")}
-                                                    >
-                                                        <ShoppingCart size={16} />
-                                                        Cart
-                                                    </Link>
-                                                )}
-                                            </>
-                                        )}
+                                        <Link
+                                            href="/products"
+                                            onClick={closeMenus}
+                                            className={getNavLinkClass(
+                                                "/products",
+                                                true
+                                            )}
+                                        >
+                                            <ShoppingBag size={16} />
+                                            Shop
+                                        </Link>
 
                                         {isLoggedIn && (
                                             <>
+                                                <Link
+                                                    href="/cart"
+                                                    onClick={closeMenus}
+                                                    className={getNavLinkClass("/cart")}
+                                                >
+                                                    <ShoppingCart size={16} />
+                                                    Cart
+                                                </Link>
+
                                                 <Link
                                                     href="/user/orders"
                                                     onClick={closeMenus}
@@ -489,6 +396,7 @@ export function Navbar() {
                                         )}
                                     </div>
 
+                                    {/* Authentication Action */}
                                     <div className="border-t border-ink-100 pt-3">
                                         {isLoggedIn ? (
                                             <button
@@ -501,7 +409,7 @@ export function Navbar() {
                                             </button>
                                         ) : (
                                             <Link
-                                                href="/login"
+                                                href="/auth/login"
                                                 onClick={closeMenus}
                                                 className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-ink-900 px-3 py-2 paragraph-14r text-white transition hover:bg-ink-700"
                                             >

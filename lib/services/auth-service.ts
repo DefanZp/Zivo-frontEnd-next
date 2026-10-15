@@ -25,15 +25,21 @@ export const authService = {
         });
     },
 
-    getCurrentUser() {
+    getCurrentUser(token: string) {
         return apiClient<CurrentUserResponse>("/user/profile", {
             method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         })
     },
 
-    resendVerificationEmail() {
+    resendVerificationEmail(token: string) {
         return apiClient<MessageResponse>("/email/verification-notification", {
             method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         })
     }
 }

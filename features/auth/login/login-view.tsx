@@ -1,33 +1,39 @@
-
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import type { LoginRequest } from "@/types/auth";
 
+type LoginFieldErrors = Partial<
+    Record<keyof LoginRequest, string>
+>;
+
 interface LoginViewProps {
+    formData: LoginRequest;
     isLoading: boolean;
     errorMessage: string;
-    onLogin: (data: LoginRequest) => Promise<void>;
+    fieldErrors: LoginFieldErrors;
+    onChange: (
+        field: keyof LoginRequest,
+        value: string
+    ) => void;
+    onLogin: () => void | Promise<void>;
 }
 
 export function LoginView({
+    formData,
     isLoading,
     errorMessage,
+    fieldErrors,
+    onChange,
     onLogin,
 }: LoginViewProps) {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        void onLogin({
-            email: email.trim(),
-            password,
-        });
+        void onLogin();
     }
 
     return (
@@ -92,6 +98,7 @@ export function LoginView({
                         </div>
 
                         <form
+                            noValidate
                             onSubmit={handleSubmit}
                             className="w-full max-w-md space-y-4 md:space-y-6"
                         >
@@ -137,13 +144,17 @@ export function LoginView({
                                     type="email"
                                     placeholder="name@example.com"
                                     autoComplete="email"
-                                    value={email}
-                                    onChange={(event) =>
-                                        setEmail(event.target.value)
-                                    }
-                                    required
+                                    value={formData.email}
+                                    onChange={(event) => onChange("email", event.target.value)}
+                                    aria-invalid={Boolean(fieldErrors.email)}
                                     className="block w-full rounded-lg border border-ink-200 bg-white px-4 py-2.5 text-sm text-ink-950 outline-none focus:border-ink-500 focus:ring-2 focus:ring-ink-200"
                                 />
+
+                                {fieldErrors.email && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {fieldErrors.email}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Password */}
@@ -161,13 +172,17 @@ export function LoginView({
                                     type="password"
                                     placeholder="••••••••"
                                     autoComplete="current-password"
-                                    value={password}
-                                    onChange={(event) =>
-                                        setPassword(event.target.value)
-                                    }
-                                    required
+                                    value={formData.password}
+                                    onChange={(event) => onChange("password", event.target.value)}
+                                    aria-invalid={Boolean(fieldErrors.password)}
                                     className="block w-full rounded-lg border border-ink-200 bg-white px-4 py-2.5 text-sm text-ink-950 outline-none focus:border-ink-500 focus:ring-2 focus:ring-ink-200"
                                 />
+
+                                {fieldErrors.password && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {fieldErrors.password}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Remember me */}
@@ -241,7 +256,7 @@ export function LoginView({
                             <p className="paragraph-14r text-center text-ink-500 dark:text-gray-400">
                                 Don&apos;t have an account yet?{" "}
                                 <Link
-                                    href="/register"
+                                    href="/auth/register"
                                     className="paragraph-14s text-ink-900 hover:underline dark:text-primary-500"
                                 >
                                     Sign up
