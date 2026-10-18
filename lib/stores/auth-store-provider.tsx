@@ -39,6 +39,22 @@ export function AuthStoreProvider({
         }
 
         void restoreAuth();
+
+        function handleUnauthorized() {
+            store.getState().clearAuth();
+        }
+
+        window.addEventListener(
+            "zivo:unauthorized",
+            handleUnauthorized
+        );
+
+        return () => {
+            window.removeEventListener(
+                "zivo:unauthorized",
+                handleUnauthorized
+            );
+        };
     }, [store]);
 
     return (

@@ -10,8 +10,8 @@ export async function apiClient<T>(
 ): Promise<T> {
     const headers = new Headers(options?.headers);
 
-    // FormData harus menggunakan Content-Type dari browser.
-    // Untuk request selain FormData, gunakan JSON secara default.
+    headers.set("Accept", "application/json");
+
     if (options?.body instanceof FormData) {
         headers.delete("Content-Type");
     } else if (!headers.has("Content-Type")) {
@@ -23,30 +23,27 @@ export async function apiClient<T>(
         headers,
     });
 
-    const responseText = await response.text();
+    if (
+        response.status === 401 &&
+        headers.has("Authorization") &&
+        typeof window !== "undefined"
+    ) {
+        window.dispatchEvent(new Event("zivo:unauthorized"));
+    }
 
-    let responseData: unknown = null;
+    const responseText = await response.text();
+    let data: unknown = null;
 
     try {
-        if (responseText) {
-            responseData = JSON.parse(responseText);
-        }
+        data = responseText ? JSON.parse(responseText) : null;
     } catch {
-        console.error(
-            `API returned a non-JSON response: ${endpoint}`,
-            {
-                status: response.status,
-                contentType: response.headers.get("content-type"),
-                preview: responseText.slice(0, 300),
-            }
-        );
+        throw new Error("API returned an invalid JSON response.");
     }
 
     if (!response.ok) {
         const errorBody =
-            typeof responseData === "object" &&
-            responseData !== null
-                ? responseData as Record<string, unknown>
+            typeof data === "object" && data !== null
+                ? data as Record<string, unknown>
                 : {};
 
         const message =
@@ -54,23 +51,11 @@ export async function apiClient<T>(
                 ? errorBody.message
                 : `API request failed with status ${response.status}.`;
 
-        const error = Object.assign(
-            new Error(message),
-            errorBody,
-            {
-                status: response.status,
-                message,
-            }
-        );
-
-        throw error as ApiError;
+        throw Object.assign(new Error(message), errorBody, {
+            status: response.status,
+            message,
+        }) as ApiError;
     }
 
-    if (responseText && responseData === null) {
-        throw new Error(
-            `The API returned an invalid response for ${endpoint}.`
-        );
-    }
-
-    return responseData as T;
+    return data as T;
 }
