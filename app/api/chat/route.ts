@@ -1,12 +1,21 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { request as undiciRequest } from "undici";
 
 export async function POST(request: NextRequest) {
     const authorization = request.headers.get("authorization");
 
-    if (!authorization?.startsWith("Bearer ")) {
+    // Jika header autentikasi dikirim, formatnya harus valid.
+    // Jika tidak ada, request diperlakukan sebagai guest.
+    if (
+        authorization &&
+        (
+            !authorization.startsWith("Bearer ") ||
+            !authorization.slice(7).trim()
+        )
+    ) {
         return NextResponse.json(
-            { message: "Unauthenticated." },
+            { message: "Invalid Authorization header." },
             { status: 401 }
         );
     }
@@ -38,25 +47,32 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const response = await undiciRequest(`${aiServiceUrl}/chat`, {
-            method: "POST",
-            headers: {
-                Authorization: authorization,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-            },
-            body: JSON.stringify({
-                thread_id: threadId,
-                user_message: userMessage.trim(),
-            }),
-            headersTimeout: 0,
-            bodyTimeout: 0,
-        });
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        };
+
+        // Guest tidak mengirim token.
+        // User login tetap meneruskan tokennya.
+        if (authorization) {
+            headers.Authorization = authorization;
+        }
+
+        const response = await undiciRequest(
+            `${aiServiceUrl}/chat`,
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    thread_id: threadId,
+                    user_message: userMessage.trim(),
+                }),
+                headersTimeout: 0,
+                bodyTimeout: 0,
+            }
+        );
 
         const responseText = await response.body.text();
-
-        console.log("AI service status:", response.statusCode);
-        console.log("AI service response:", responseText);
 
         let data: unknown;
 
@@ -65,8 +81,8 @@ export async function POST(request: NextRequest) {
         } catch {
             return NextResponse.json(
                 {
-                    message: "AI service returned a non-JSON response.",
-                    details: responseText.slice(0, 1000),
+                    message:
+                        "AI service returned a non-JSON response.",
                 },
                 { status: 502 }
             );
@@ -76,7 +92,6 @@ export async function POST(request: NextRequest) {
             status: response.statusCode,
         });
     } catch (error) {
-
         const isTimeout =
             error instanceof Error &&
             error.name === "TimeoutError";

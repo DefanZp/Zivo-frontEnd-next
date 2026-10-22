@@ -7,7 +7,11 @@ import {
     type KeyboardEvent,
 } from "react";
 
-import { chatService } from "@/lib/services/chat-service";
+import {
+    chatService,
+    ChatServiceError,
+} from "@/lib/services/chat-service";
+
 import { useAuthStore } from "@/lib/stores/auth-store-provider";
 
 import {
@@ -56,7 +60,6 @@ export function ChatWidget() {
 
         if (
             !userMessage ||
-            !token ||
             !threadId ||
             loading
         ) {
@@ -93,6 +96,24 @@ export function ChatWidget() {
         } catch (error) {
             console.error("Failed to send chat message:", error);
 
+            if (
+                error instanceof ChatServiceError &&
+                error.code === "AUTH_REQUIRED"
+            ) {
+                setMessages((current) => [
+                    ...current,
+                    {
+                        id: crypto.randomUUID(),
+                        role: "assistant",
+                        content:
+                            "Untuk menggunakan fitur ini, silakan login terlebih dahulu. Kamu tetap bisa bertanya tentang produk tanpa login.",
+                    },
+                ]);
+
+                setErrorMessage("");
+                return;
+            }
+
             setErrorMessage(
                 error instanceof Error
                     ? error.message
@@ -103,7 +124,7 @@ export function ChatWidget() {
         }
     }
 
-    if (!isAuthReady || !token) {
+    if (!isAuthReady) {
         return null;
     }
 
