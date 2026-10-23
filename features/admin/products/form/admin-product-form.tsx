@@ -29,6 +29,7 @@ const initialFormData: ProductFormData = {
     price: "1",
     stock: "1",
     category_id: "1",
+    specifications: [],
 };
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -101,6 +102,16 @@ export function AdminProductForm({
                 price: String(product.price),
                 stock: String(product.stock),
                 category_id: String(product.category_id),
+                specifications: Object.entries(
+                    product.specifications ?? {}
+                ).map(([key, value]) => ({
+                    key,
+                    value: Array.isArray(value)
+                        ? value.join(", ")
+                        : value == null
+                            ? ""
+                            : String(value),
+                })),
             });
 
             setImagePreview(product.image_url || null);
@@ -154,6 +165,45 @@ export function AdminProductForm({
             ...currentData,
             [name]: value,
         }));
+    }
+
+    function handleSpecificationChange(
+        index: number,
+        field: "key" | "value",
+        value: string
+    ) {
+        setFormData((currentData) => ({
+            ...currentData,
+            specifications: currentData.specifications.map(
+                (specification, currentIndex) =>
+                    currentIndex === index
+                        ? { ...specification, [field]: value }
+                        : specification
+            ),
+        }));
+    }
+
+    function handleAddSpecification() {
+        setFormData((currentData) => ({
+            ...currentData,
+            specifications: [
+                ...currentData.specifications,
+                { key: "", value: "" },
+            ],
+        }));
+    }
+
+    function handleRemoveSpecification(index: number) {
+        setFormData((currentData) => ({
+            ...currentData,
+            specifications: currentData.specifications.filter(
+                (_, currentIndex) => currentIndex !== index
+            ),
+        }));
+    }
+
+    function normalizeSpecificationKey(key: string): string {
+        return key.trim().toLowerCase().replace(/\s+/g, "_");
     }
 
     function handleImageChange(
@@ -245,6 +295,28 @@ export function AdminProductForm({
             return false;
         }
 
+        const specifications = formData.specifications.filter(
+            (item) => item.key.trim() || item.value.trim()
+        );
+
+        const hasIncompleteSpecification = specifications.some(
+            (item) => !item.key.trim() || !item.value.trim()
+        );
+
+        if (hasIncompleteSpecification) {
+            toast.error("Please complete both attribute and value.");
+            return false;
+        }
+
+        const keys = specifications.map((item) =>
+            normalizeSpecificationKey(item.key)
+        );
+
+        if (new Set(keys).size !== keys.length) {
+            toast.error("Each specification attribute must be unique.");
+            return false;
+        }
+
         return true;
     }
 
@@ -256,6 +328,17 @@ export function AdminProductForm({
         data.append("price", formData.price);
         data.append("stock", formData.stock);
         data.append("category_id", formData.category_id);
+        
+        const specifications = Object.fromEntries(
+            formData.specifications
+                .filter((item) => item.key.trim() && item.value.trim())
+                .map((item) => [
+                    normalizeSpecificationKey(item.key),
+                    item.value.trim(),
+                ])
+        );
+
+        data.append("specifications", JSON.stringify(specifications));
 
         if (selectedImage) {
             data.append("image", selectedImage);
@@ -348,6 +431,9 @@ export function AdminProductForm({
             onImageChange={handleImageChange}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
+            onSpecificationChange={handleSpecificationChange}
+            onAddSpecification={handleAddSpecification}
+            onRemoveSpecification={handleRemoveSpecification}
         />
     );
 }

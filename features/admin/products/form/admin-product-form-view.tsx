@@ -13,6 +13,10 @@ export interface ProductFormData {
     price: string;
     stock: string;
     category_id: string;
+    specifications: {
+        key: string;
+        value: string;
+    }[];
 }
 
 interface AdminProductFormViewProps {
@@ -29,6 +33,13 @@ interface AdminProductFormViewProps {
     onImageChange: (event: ChangeEvent<HTMLInputElement>) => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
     onCancel: () => void;
+    onSpecificationChange: (
+        index: number,
+        field: "key" | "value",
+        value: string
+    ) => void;
+    onAddSpecification: () => void;
+    onRemoveSpecification: (index: number) => void;
 }
 
 export function AdminProductFormView({
@@ -43,6 +54,9 @@ export function AdminProductFormView({
     onImageChange,
     onSubmit,
     onCancel,
+    onSpecificationChange,
+    onAddSpecification,
+    onRemoveSpecification,
 }: AdminProductFormViewProps) {
     if (loading) {
         return (
@@ -157,6 +171,92 @@ export function AdminProductFormView({
                             placeholder="Describe your product"
                             className="w-full rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none focus:border-ink-400 focus:ring-2 focus:ring-ink-100"
                         />
+                    </div>
+
+                    <div className="space-y-4 sm:col-span-2">
+                        <div>
+                            <h2 className="text-sm font-medium text-ink-900">
+                                Product Specifications
+                            </h2>
+
+                            <p className="mt-1 text-xs text-ink-500">
+                                Add product attributes such as material, color,
+                                size, or connectivity.
+                            </p>
+                        </div>
+
+                        {formData.specifications.map((specification, index) => (
+                            <div
+                                key={index}
+                                className="grid gap-3 rounded-lg border border-ink-200 p-4 sm:grid-cols-[1fr_1fr_auto]"
+                            >
+                                <div className="space-y-1">
+                                    <label
+                                        htmlFor={`spec-key-${index}`}
+                                        className="text-xs font-medium text-ink-600"
+                                    >
+                                        Attribute
+                                    </label>
+
+                                    <input
+                                        id={`spec-key-${index}`}
+                                        type="text"
+                                        value={specification.key}
+                                        onChange={(event) =>
+                                            onSpecificationChange(
+                                                index,
+                                                "key",
+                                                event.target.value
+                                            )
+                                        }
+                                        placeholder="e.g. Material"
+                                        className="h-10 w-full rounded-lg border border-ink-200 px-3 text-sm outline-none focus:border-ink-400 focus:ring-2 focus:ring-ink-100"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label
+                                        htmlFor={`spec-value-${index}`}
+                                        className="text-xs font-medium text-ink-600"
+                                    >
+                                        Value
+                                    </label>
+
+                                    <input
+                                        id={`spec-value-${index}`}
+                                        type="text"
+                                        value={specification.value}
+                                        onChange={(event) =>
+                                            onSpecificationChange(
+                                                index,
+                                                "value",
+                                                event.target.value
+                                            )
+                                        }
+                                        placeholder="e.g. Cotton"
+                                        className="h-10 w-full rounded-lg border border-ink-200 px-3 text-sm outline-none focus:border-ink-400 focus:ring-2 focus:ring-ink-100"
+                                    />
+                                </div>
+
+                                <div className="flex items-end">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => onRemoveSpecification(index)}
+                                    >
+                                        Remove
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onAddSpecification}
+                        >
+                            Add specification
+                        </Button>
                     </div>
 
                     <div className="space-y-2">

@@ -4,7 +4,7 @@ import {
     ShoppingCart,
 } from "lucide-react";
 
-import type { Product } from "@/types/product";
+import type { Product, ProductSpecificationValue } from "@/types/product";
 
 interface ProductDetailViewProps {
     product: Product | null;
@@ -25,6 +25,30 @@ function formatPrice(price: string) {
     }).format(Number(price));
 }
 
+function formatSpecificationLabel(key: string): string {
+    return key
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatSpecificationValue(
+    value: ProductSpecificationValue
+): string {
+    if (Array.isArray(value)) {
+        return value.join(", ");
+    }
+
+    if (value === null) {
+        return "";
+    }
+
+    if (typeof value === "boolean") {
+        return value ? "Yes" : "No";
+    }
+
+    return String(value).trim();
+}
+
 export function ProductDetailView({
     product,
     loading,
@@ -35,6 +59,17 @@ export function ProductDetailView({
     onRetry,
     onAddToCart,
 }: ProductDetailViewProps) {
+
+    const specifications = Object.entries(
+    product?.specifications ?? {}
+    )
+        .map(([key, value]) => ({
+            key,
+            label: formatSpecificationLabel(key),
+            value: formatSpecificationValue(value),
+        }))
+        .filter((item) => item.value !== "");
+
     return (
         <section className="py-12">
             <div className="container mx-auto px-5 lg:px-0">
@@ -119,6 +154,32 @@ export function ProductDetailView({
                                     {product.description}
                                 </p>
                             </div>
+
+                            {/* Product specifications */}
+                            {specifications.length > 0 && (
+                                <div className="border-b border-ink-100 py-6">
+                                    <h2 className="mb-3 text-xs font-bold tracking-wider text-zinc-400 uppercase">
+                                        Product Specifications
+                                    </h2>
+
+                                    <dl className="divide-y divide-ink-100">
+                                        {specifications.map((item) => (
+                                            <div
+                                                key={item.key}
+                                                className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-4 py-3 text-sm"
+                                            >
+                                                <dt className="text-ink-500">
+                                                    {item.label}
+                                                </dt>
+
+                                                <dd className="break-words font-medium text-ink-800">
+                                                    {item.value}
+                                                </dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </div>
+                            )}
 
                             {/* Cart integration */}
                             <div className="mt-auto pt-6">

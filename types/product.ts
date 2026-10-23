@@ -1,3 +1,15 @@
+export type ProductSpecificationValue =
+    | string
+    | number
+    | boolean
+    | string[]
+    | null;
+
+export type ProductSpecifications = Record<
+    string,
+    ProductSpecificationValue
+>;
+
 export interface ProductCategory {
     id: number;
     name: string;
@@ -15,6 +27,7 @@ export interface Product {
     stock: number;
     image_path: string;
     image_url: string;
+    specifications: ProductSpecifications | null;
     created_at: string;
     updated_at: string;
     category: ProductCategory;
