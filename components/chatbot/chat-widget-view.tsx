@@ -1,5 +1,8 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 import {
     useEffect,
     useRef,
@@ -119,15 +122,119 @@ export function ChatWidgetView({
                                 )}
 
                                 <div
-                                    className={`max-w-[85%] rounded-2xl px-3 py-2.5 text-sm ${
+                                    className={`max-w-[85%] min-w-0 rounded-2xl px-3 py-2.5 text-sm ${
                                         message.role === "user"
                                             ? "bg-ink-950 text-white"
                                             : "border border-ink-200 bg-white text-ink-900"
                                     }`}
                                 >
-                                    <p className="whitespace-pre-wrap break-words">
-                                        {message.content}
-                                    </p>
+                                    {message.role === "assistant" ? (
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                p: ({ children }) => (
+                                                    <p className="mb-2 leading-6 last:mb-0">
+                                                        {children}
+                                                    </p>
+                                                ),
+
+                                                strong: ({ children }) => (
+                                                    <strong className="font-semibold text-ink-950">
+                                                        {children}
+                                                    </strong>
+                                                ),
+
+                                                em: ({ children }) => (
+                                                    <em>{children}</em>
+                                                ),
+
+                                                ul: ({ children }) => (
+                                                    <ul className="mb-2 ml-5 list-disc space-y-1 last:mb-0">
+                                                        {children}
+                                                    </ul>
+                                                ),
+
+                                                ol: ({ children }) => (
+                                                    <ol className="mb-2 ml-5 list-decimal space-y-1 last:mb-0">
+                                                        {children}
+                                                    </ol>
+                                                ),
+
+                                                li: ({ children }) => (
+                                                    <li className="pl-0.5">
+                                                        {children}
+                                                    </li>
+                                                ),
+
+                                                h1: ({ children }) => (
+                                                    <h3 className="mb-2 mt-3 text-base font-bold first:mt-0">
+                                                        {children}
+                                                    </h3>
+                                                ),
+
+                                                h2: ({ children }) => (
+                                                    <h3 className="mb-2 mt-3 text-sm font-bold first:mt-0">
+                                                        {children}
+                                                    </h3>
+                                                ),
+
+                                                h3: ({ children }) => (
+                                                    <h3 className="mb-1 mt-3 font-semibold first:mt-0">
+                                                        {children}
+                                                    </h3>
+                                                ),
+
+                                                a: ({ href, children }) => (
+                                                    <a
+                                                        href={href}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="break-all text-blue-700 underline underline-offset-2"
+                                                    >
+                                                        {children}
+                                                    </a>
+                                                ),
+
+                                                blockquote: ({ children }) => (
+                                                    <blockquote className="my-2 border-l-2 border-ink-300 pl-3 text-ink-600">
+                                                        {children}
+                                                    </blockquote>
+                                                ),
+
+                                                code: ({ children }) => (
+                                                    <code className="break-words rounded bg-ink-100 px-1 py-0.5 text-[0.85em]">
+                                                        {children}
+                                                    </code>
+                                                ),
+
+                                                table: ({ children }) => (
+                                                    <div className="my-2 max-w-full overflow-x-auto">
+                                                        <table className="w-full border-collapse text-left text-xs">
+                                                            {children}
+                                                        </table>
+                                                    </div>
+                                                ),
+
+                                                th: ({ children }) => (
+                                                    <th className="border border-ink-200 bg-ink-50 px-2 py-1 font-semibold">
+                                                        {children}
+                                                    </th>
+                                                ),
+
+                                                td: ({ children }) => (
+                                                    <td className="border border-ink-200 px-2 py-1 align-top">
+                                                        {children}
+                                                    </td>
+                                                ),
+                                            }}
+                                        >
+                                            {message.content}
+                                        </ReactMarkdown>
+                                    ) : (
+                                        <p className="whitespace-pre-wrap break-words">
+                                            {message.content}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {message.role === "user" && (
