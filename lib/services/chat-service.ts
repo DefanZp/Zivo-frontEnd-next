@@ -52,10 +52,8 @@ function getErrorMessage(result: unknown): string {
     return "Failed to send chat message.";
 }
 
-function isUnauthenticatedMessage(
-    message: string,
-): boolean {
-    return /^(unauthenticated|unauthorized|auth_required)\.?$/i
+function isUnauthenticatedMessage(message: string): boolean {
+    return /\b(unauthenticated|unauthorized|auth_required|invalid or expired token|expired token|invalid token)\b/i
         .test(message.trim());
 }
 
@@ -127,5 +125,169 @@ export const chatService = {
             thread_id: result.thread_id,
             response: result.response,
         };
+    },
+
+        async sendMessageStream(
+        token: string | null,
+        data: SendChatMessageRequest,
+        onToken: (content: string) => void,
+    ): Promise<void> {
+        const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+        };
+
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch("/api/chat/stream", {
+            method: "POST",
+            headers,
+            body: JSON.stringify(data),
+            cache: "no-store",
+        });
+
+        // Tangani HTTP error sebelum membaca stream.
+        if (!response.ok) {
+            const result: unknown = await response
+                .json()
+                .catch(() => null);
+
+            const errorMessage = getErrorMessage(result);
+
+            const authRequired =
+                response.status === 401 ||
+                isUnauthenticatedMessage(errorMessage);
+
+            throw new ChatServiceError(
+                errorMessage,
+                authRequired
+                    ? "AUTH_REQUIRED"
+                    : "REQUEST_FAILED",
+                response.status,
+            );
+        }
+
+        if (!response.body) {
+            throw new ChatServiceError(
+                "Streaming response is not available.",
+                "REQUEST_FAILED",
+            );
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = "";
+        let completed = false;
+
+        // Memproses satu event SSE yang sudah lengkap.
+        function handleEvent(block: string): void {
+            let eventName = "message";
+            const dataLines: string[] = [];
+
+            for (const line of block.split(/\r?\n/)) {
+                if (line.startsWith("event:")) {
+                    eventName = line.slice(6).trim();
+                } else if (line.startsWith("data:")) {
+                    dataLines.push(line.slice(5).trimStart());
+                }
+            }
+
+            if (dataLines.length === 0) {
+                return;
+            }
+
+            let eventData: unknown;
+
+            try {
+                eventData = JSON.parse(dataLines.join("\n"));
+            } catch {
+                throw new ChatServiceError(
+                    "Invalid streaming event received.",
+                    "REQUEST_FAILED",
+                );
+            }
+
+            if (eventName === "token") {
+                if (
+                    isRecord(eventData) &&
+                    typeof eventData.content === "string"
+                ) {
+                    onToken(eventData.content);
+                }
+
+                return;
+            }
+
+            if (eventName === "error") {
+                const message = getErrorMessage(eventData);
+
+                throw new ChatServiceError(
+                    message,
+                    isUnauthenticatedMessage(message)
+                        ? "AUTH_REQUIRED"
+                        : "REQUEST_FAILED",
+                );
+            }
+
+            if (eventName === "done") {
+                completed = true;
+            }
+        }
+
+        try {
+            while (true) {
+                const { value, done } = await reader.read();
+
+                if (done) {
+                    buffer += decoder.decode();
+                    break;
+                }
+
+                buffer += decoder.decode(value, {
+                    stream: true,
+                });
+
+                // Satu potongan jaringan dapat berisi
+                // beberapa event atau hanya sebagian event.
+                while (true) {
+                    const separator = /\r?\n\r?\n/.exec(buffer);
+
+                    if (
+                        !separator ||
+                        separator.index === undefined
+                    ) {
+                        break;
+                    }
+
+                    const block = buffer.slice(
+                        0,
+                        separator.index,
+                    );
+
+                    buffer = buffer.slice(
+                        separator.index + separator[0].length,
+                    );
+
+                    handleEvent(block);
+                }
+            }
+
+            // Proses event terakhir jika masih tersisa.
+            if (buffer.trim()) {
+                handleEvent(buffer);
+            }
+
+            if (!completed) {
+                throw new ChatServiceError(
+                    "The AI response stream ended unexpectedly.",
+                    "REQUEST_FAILED",
+                );
+            }
+        } finally {
+            reader.releaseLock();
+        }
     },
 };

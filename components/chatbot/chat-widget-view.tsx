@@ -52,7 +52,7 @@ export function ChatWidgetView({
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({
-            behavior: "smooth",
+            behavior: loading ? "auto" : "smooth",
         });
     }, [messages, loading]);
 
@@ -129,107 +129,135 @@ export function ChatWidgetView({
                                     }`}
                                 >
                                     {message.role === "assistant" ? (
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                            components={{
-                                                p: ({ children }) => (
-                                                    <p className="mb-2 leading-6 last:mb-0">
-                                                        {children}
-                                                    </p>
-                                                ),
+                                        message.content.length === 0 &&
+                                        loading &&
+                                        message.id === messages[messages.length - 1]?.id ? (
+                                            <div
+                                                className="flex min-h-6 items-center gap-2 py-0.5 text-ink-500"
+                                                role="status"
+                                                aria-label="Zivo is thinking"
+                                            >
+                                                <span className="text-xs">Thinking</span>
 
-                                                strong: ({ children }) => (
-                                                    <strong className="font-semibold text-ink-950">
-                                                        {children}
-                                                    </strong>
-                                                ),
+                                                <span className="flex items-center gap-1">
+                                                    <span className="size-1.5 animate-bounce rounded-full bg-ink-500 [animation-delay:-0.3s]" />
+                                                    <span className="size-1.5 animate-bounce rounded-full bg-ink-500 [animation-delay:-0.15s]" />
+                                                    <span className="size-1.5 animate-bounce rounded-full bg-ink-500" />
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        p: ({ children }) => (
+                                                            <p className="mb-2 leading-6 last:mb-0">
+                                                                {children}
+                                                            </p>
+                                                        ),
 
-                                                em: ({ children }) => (
-                                                    <em>{children}</em>
-                                                ),
+                                                        strong: ({ children }) => (
+                                                            <strong className="font-semibold text-ink-950">
+                                                                {children}
+                                                            </strong>
+                                                        ),
 
-                                                ul: ({ children }) => (
-                                                    <ul className="mb-2 ml-5 list-disc space-y-1 last:mb-0">
-                                                        {children}
-                                                    </ul>
-                                                ),
+                                                        em: ({ children }) => (
+                                                            <em>{children}</em>
+                                                        ),
 
-                                                ol: ({ children }) => (
-                                                    <ol className="mb-2 ml-5 list-decimal space-y-1 last:mb-0">
-                                                        {children}
-                                                    </ol>
-                                                ),
+                                                        ul: ({ children }) => (
+                                                            <ul className="mb-2 ml-5 list-disc space-y-1 last:mb-0">
+                                                                {children}
+                                                            </ul>
+                                                        ),
 
-                                                li: ({ children }) => (
-                                                    <li className="pl-0.5">
-                                                        {children}
-                                                    </li>
-                                                ),
+                                                        ol: ({ children }) => (
+                                                            <ol className="mb-2 ml-5 list-decimal space-y-1 last:mb-0">
+                                                                {children}
+                                                            </ol>
+                                                        ),
 
-                                                h1: ({ children }) => (
-                                                    <h3 className="mb-2 mt-3 text-base font-bold first:mt-0">
-                                                        {children}
-                                                    </h3>
-                                                ),
+                                                        li: ({ children }) => (
+                                                            <li className="pl-0.5">
+                                                                {children}
+                                                            </li>
+                                                        ),
 
-                                                h2: ({ children }) => (
-                                                    <h3 className="mb-2 mt-3 text-sm font-bold first:mt-0">
-                                                        {children}
-                                                    </h3>
-                                                ),
+                                                        h1: ({ children }) => (
+                                                            <h3 className="mb-2 mt-3 text-base font-bold first:mt-0">
+                                                                {children}
+                                                            </h3>
+                                                        ),
 
-                                                h3: ({ children }) => (
-                                                    <h3 className="mb-1 mt-3 font-semibold first:mt-0">
-                                                        {children}
-                                                    </h3>
-                                                ),
+                                                        h2: ({ children }) => (
+                                                            <h3 className="mb-2 mt-3 text-sm font-bold first:mt-0">
+                                                                {children}
+                                                            </h3>
+                                                        ),
 
-                                                a: ({ href, children }) => (
-                                                    <a
-                                                        href={href}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="break-all text-blue-700 underline underline-offset-2"
-                                                    >
-                                                        {children}
-                                                    </a>
-                                                ),
+                                                        h3: ({ children }) => (
+                                                            <h3 className="mb-1 mt-3 font-semibold first:mt-0">
+                                                                {children}
+                                                            </h3>
+                                                        ),
 
-                                                blockquote: ({ children }) => (
-                                                    <blockquote className="my-2 border-l-2 border-ink-300 pl-3 text-ink-600">
-                                                        {children}
-                                                    </blockquote>
-                                                ),
+                                                        a: ({ href, children }) => (
+                                                            <a
+                                                                href={href}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="break-all text-blue-700 underline underline-offset-2"
+                                                            >
+                                                                {children}
+                                                            </a>
+                                                        ),
 
-                                                code: ({ children }) => (
-                                                    <code className="break-words rounded bg-ink-100 px-1 py-0.5 text-[0.85em]">
-                                                        {children}
-                                                    </code>
-                                                ),
+                                                        blockquote: ({ children }) => (
+                                                            <blockquote className="my-2 border-l-2 border-ink-300 pl-3 text-ink-600">
+                                                                {children}
+                                                            </blockquote>
+                                                        ),
 
-                                                table: ({ children }) => (
-                                                    <div className="my-2 max-w-full overflow-x-auto">
-                                                        <table className="w-full border-collapse text-left text-xs">
-                                                            {children}
-                                                        </table>
-                                                    </div>
-                                                ),
+                                                        code: ({ children }) => (
+                                                            <code className="break-words rounded bg-ink-100 px-1 py-0.5 text-[0.85em]">
+                                                                {children}
+                                                            </code>
+                                                        ),
 
-                                                th: ({ children }) => (
-                                                    <th className="border border-ink-200 bg-ink-50 px-2 py-1 font-semibold">
-                                                        {children}
-                                                    </th>
-                                                ),
+                                                        table: ({ children }) => (
+                                                            <div className="my-2 max-w-full overflow-x-auto">
+                                                                <table className="w-full border-collapse text-left text-xs">
+                                                                    {children}
+                                                                </table>
+                                                            </div>
+                                                        ),
 
-                                                td: ({ children }) => (
-                                                    <td className="border border-ink-200 px-2 py-1 align-top">
-                                                        {children}
-                                                    </td>
-                                                ),
-                                            }}
-                                        >
-                                            {message.content}
-                                        </ReactMarkdown>
+                                                        th: ({ children }) => (
+                                                            <th className="border border-ink-200 bg-ink-50 px-2 py-1 font-semibold">
+                                                                {children}
+                                                            </th>
+                                                        ),
+
+                                                        td: ({ children }) => (
+                                                            <td className="border border-ink-200 px-2 py-1 align-top">
+                                                                {children}
+                                                            </td>
+                                                        ),
+                                                    }}
+                                                >
+                                                    {message.content}
+                                                </ReactMarkdown>
+
+                                                {loading &&
+                                                    message.id === messages[messages.length - 1]?.id && (
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className="ml-0.5 inline-block h-4 w-[2px] animate-pulse rounded-full bg-ink-700 align-text-bottom"
+                                                        />
+                                                    )}
+                                            </>
+                                        )
                                     ) : (
                                         <p className="whitespace-pre-wrap break-words">
                                             {message.content}
@@ -244,16 +272,6 @@ export function ChatWidgetView({
                                 )}
                             </div>
                         ))}
-
-                        {loading && (
-                            <div
-                                className="flex items-center gap-2 text-sm text-ink-500"
-                                role="status"
-                            >
-                                <Bot size={18} />
-                                <span>AI is thinking...</span>
-                            </div>
-                        )}
 
                         {errorMessage && (
                             <div
