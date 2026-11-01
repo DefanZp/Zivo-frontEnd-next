@@ -32,7 +32,7 @@ import {
 
 import { Pagination } from "@/components/shared/pagination";
 
-import type { Order } from "@/types/order";
+import type { Order, OrderStatus } from "@/types/order";
 
 interface AdminOrdersViewProps {
     orders: Order[];
@@ -43,7 +43,7 @@ interface AdminOrdersViewProps {
     updatingStatus: boolean;
     onRetry: () => void;
     onPageChange: (page: number) => void;
-    onStatusChange: (orderId: number, status: string) => void;
+    onStatusChange: (orderId: number, status: OrderStatus) => void;
 }
 
 const statusOptions = [
