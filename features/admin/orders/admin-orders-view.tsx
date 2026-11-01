@@ -259,7 +259,7 @@ function OrdersTable({
                                         value={order.status}
                                         disabled={updatingStatus}
                                         onChange={(event) =>
-                                            onStatusChange(order.id, event.target.value)
+                                            onStatusChange(order.id, event.target.value as OrderStatus)
                                         }
                                         className="block h-9 w-full max-w-[190px] min-w-0 rounded-lg border border-ink-200 bg-white px-2.5 text-xs text-ink-700 outline-none transition focus:border-ink-400 focus:ring-2 focus:ring-ink-100 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
