@@ -28,11 +28,13 @@ export function EmailVerified() {
             return;
         }
 
+        const authToken = token
+
         async function refreshUser() {
             try {
-                const response = await authService.getCurrentUser(token);
+                const response = await authService.getCurrentUser(authToken);
 
-                setAuth(response.data, token);
+                setAuth(response.data, authToken);
             } catch {
                 setErrorMessage(
                     "Failed to refresh your account status."

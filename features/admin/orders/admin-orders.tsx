@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { orderService } from "@/lib/services/order-service";
 import { useAuthStore } from "@/lib/stores/auth-store-provider";
-import type { Order } from "@/types/order";
+import type { Order, OrderStatus } from "@/types/order";
 
 import AdminOrdersView from "./admin-orders-view";
 
@@ -86,7 +86,7 @@ export function AdminOrders() {
 
     const handleStatusChange = async (
         orderId: number,
-        status: string
+        status: OrderStatus
     ) => {
         if (!token || updatingStatus) {
             return;

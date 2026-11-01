@@ -59,6 +59,8 @@ export function PaymentResult({
             return;
         }
 
+        const authToken = token
+
         let active = true;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -66,7 +68,7 @@ export function PaymentResult({
             try {
                 const response =
                     await paymentService.getPaymentByGatewayOrderId(
-                        token,
+                        authToken,
                         gatewayOrderId
                     );
 

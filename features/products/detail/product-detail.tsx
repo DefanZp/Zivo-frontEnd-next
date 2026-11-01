@@ -96,14 +96,17 @@ export function ProductDetail({ id }: ProductDetailProps) {
             return;
         }
 
+        const authToken = token;
+        const currentProductId = productId;
+
         async function checkCart() {
             setCheckingCart(true);
 
             try {
-                const response = await cartService.getCart(token);
+                const response = await cartService.getCart(authToken);
 
                 const found = response.data.items.some(
-                    (item) => item.product.id === productId
+                    (item) => item.product.id === currentProductId
                 );
 
                 if (!cancelled) {
