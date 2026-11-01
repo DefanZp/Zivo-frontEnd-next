@@ -174,7 +174,7 @@ function OrdersTable({
 }: {
     orders: Order[];
     updatingStatus: boolean;
-    onStatusChange: (orderId: number, status: string) => void;
+    onStatusChange: (orderId: number, status: OrderStatus) => void;
 }) {
     return (
         <div className="w-full overflow-x-auto">
