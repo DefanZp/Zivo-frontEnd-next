@@ -1,448 +1,225 @@
 # Zivo Frontend
 
-**The web application for Zivo, an AI-powered e-commerce platform.**
+The customer-facing and administrator web application for **Zivo**, an e-commerce platform with an integrated AI Shopping Assistant.
 
-Zivo Frontend is the customer-facing and administrative web application built with Next.js. It provides an e-commerce experience where customers can discover products, manage their shopping carts, complete purchases, and interact with an AI shopping assistant.
+The frontend is built with Next.js App Router, React, TypeScript, Tailwind CSS, and Zustand. It communicates with the Laravel REST API for e-commerce features and uses Next.js Route Handlers to proxy AI chat requests to the separate FastAPI service.
 
-The application also includes an administrative dashboard for managing products and orders.
+## Live Application
 
-Built with Next.js App Router, React, TypeScript, and Zustand, the frontend communicates with the Laravel REST API and Zivo AI Service.
-
-## Related Repositories
-
-| Repository | Description |
-|---|---|
-| [Zivo Frontend](https://github.com/DefanZp/Zivo-frontEnd-next) | Next.js web application |
-| [Zivo Backend](https://github.com/DefanZp/Zivo-backEnd) | Laravel REST API |
-| [Zivo AI Service](https://github.com/DefanZp/Zivo-ai) | AI shopping assistant powered by Python and LangGraph |
-| [Zivo n8n](https://github.com/DefanZp/Zivo-n8n) | Workflow automation |
+- **Web application:** https://zivo-front-end-next-5uvw.vercel.app/
+- **Backend API:** https://api.zivoapp.cloud
 
 ## Features
 
-### Customer Experience
+### Customer experience
 
-- Browse and discover products.
-- Search and filter products.
-- View product details.
-- Manage shopping cart items.
-- Manage customer shipping addresses.
-- Complete the checkout process.
-- Make payments through Midtrans Snap.
-- View order history and order details.
-- Manage customer account settings.
+- Registration, login, and email verification.
+- Product catalog with pagination, search, category filtering, and sorting.
+- Product detail pages.
+- Shopping cart operations.
+- Checkout with saved delivery addresses.
+- Midtrans Snap payment flow and payment result page.
+- Order history and order detail.
+- Profile and address management.
+- AI Shopping Assistant with streamed responses.
 
-### Authentication & User Management
+### Administrator experience
 
-- Customer registration and login.
-- Token-based authentication using Laravel Sanctum.
-- Persistent authentication state using Zustand Persist.
-- Email verification flow.
-- Protected routes for authenticated customers.
-- Role-based access control for administrators.
-- Automatic authentication state cleanup when the backend returns an unauthorized response.
+- Dashboard statistics and low-stock overview.
+- Product creation, editing, deletion, and image upload.
+- Order listing, order details, and order status management.
+- Admin-only navigation and protected pages.
 
-### Admin Dashboard
-
-- Dashboard overview.
-- Product management.
-- Create and edit products.
-- Upload product images.
-- Delete products.
-- View low-stock products.
-- Manage customer orders.
-- View order details.
-- Update order statuses.
-
-### AI Shopping Assistant
-
-- Interactive AI chatbot integrated into the shopping experience.
-- Product-related conversations.
-- Guest and authenticated user support.
-- Streaming AI responses using Server-Sent Events (SSE).
-- Conversation thread identification.
-- Communication with the separate Zivo AI Service through Next.js Route Handlers.
-
-### Payment Integration
-
-- Midtrans Snap integration.
-- Request payment tokens from the Laravel backend.
-- Open the Midtrans payment interface.
-- Handle payment callbacks.
-- Display payment result information.
-
-## Technology Stack
-
-| Technology | Purpose |
-|---|---|
-| Next.js 16 | React framework and application routing |
-| React 19 | User interface |
-| TypeScript 5 | Static type checking |
-| Tailwind CSS 4 | Styling |
-| Zustand 5 | Client-side state management |
-| Zustand Persist | Persistent authentication state |
-| shadcn/ui | UI component foundation |
-| Base UI | Accessible UI primitives |
-| Lucide React | Icons |
-| Sonner | Toast notifications |
-| React Markdown | AI response rendering |
-| Midtrans Snap | Payment interface |
-| ESLint 9 | Code quality and linting |
+> Backend authorization remains the security boundary. Frontend route guards improve navigation and user experience but do not replace Laravel authorization.
 
 ## Architecture
 
-The frontend follows a feature-oriented structure that separates application routes, UI components, business features, API communication, state management, and shared types.
-
-### Application Flow
+### E-commerce requests
 
 ```text
-                Next.js Application
-                        |
-                        v
-                   App Router
-                        |
-          +-------------+-------------+
-          |             |             |
-          v             v             v
-       Customer       Admin        API Routes
-        Pages         Pages            |
-          |             |              |
-          +-------------+              |
-                        |              |
-                        v              v
-                   Features       AI Service
-                        |
-                        v
-                  Components
-                        |
-                        v
-                 Client Services
-                        |
-                        v
-                    API Client
-                        |
-                        v
-                  Laravel Backend
+Next.js App Router
+       |
+       v
+Feature Component
+       |
+       v
+Domain Service (lib/services)
+       |
+       v
+Central API Client (lib/api/client.ts)
+       |
+       v
+Laravel REST API
+       |
+       v
+PostgreSQL
 ```
 
-### State Management
+Feature modules generally separate stateful feature components from presentation components (`*-view.tsx`). Shared UI and layout components live under `components/`.
 
-Zustand is used to manage authentication state across the application.
-
-The authentication store contains:
-
-- `user`: Current authenticated user.
-- `token`: Laravel Sanctum access token.
-- `isAuthReady`: Indicates whether authentication state restoration has completed.
-
-The store uses Zustand Persist with local storage to preserve authentication information across page reloads.
-
-An `AuthStoreProvider` initializes the store and restores its persisted state after the component mounts. This approach also avoids accessing browser-only local storage directly during server-side rendering.
-
-### API Communication
-
-The application uses a centralized API client located at:
-
-```text
-lib/api/client.ts
-```
-
-The API client handles:
-
-- Base API URL configuration.
-- JSON request and response handling.
-- Authorization headers.
-- FormData requests.
-- API error handling.
-- Unauthorized response detection.
-
-Feature-specific services use this client to communicate with the Laravel backend.
-
-### AI Integration
-
-The AI chatbot communicates with the AI Service through Next.js Route Handlers.
+### AI chat requests
 
 ```text
 Chat Widget
     |
     v
-Chat Service
+chatService
     |
     v
-Next.js API Route
+Next.js Route Handler (/api/chat/stream)
     |
     v
-Zivo AI Service
+FastAPI AI Service (/chat/stream)
+    |
+    v
+LangGraph Agent
+    |
+    v
+SSE events streamed back to the browser
 ```
 
-Two communication methods are implemented:
+The active chat widget uses the streaming endpoint. A non-streaming `/api/chat` Route Handler is also present in the source.
 
-| Endpoint | Description |
+## Authentication and State
+
+Authentication state is managed with a Zustand store using the persist middleware.
+
+- Persisted storage key: `zivo-auth`.
+- Browser storage: `localStorage`.
+- Persisted values: user and token.
+- `isAuthReady` is maintained separately and becomes ready after store rehydration.
+- The API client dispatches `zivo:unauthorized` for authenticated 401 responses; the auth store listens for this event and clears local authentication state.
+- `AuthGuard`, `AdminGuard`, and `VerifiedGuard` control access to frontend routes.
+
+The Bearer token is sent to Laravel for protected API calls. Since the token is stored in browser local storage, this design has an XSS-related security trade-off. Keep backend authorization in place and apply appropriate XSS protections.
+
+## Main Routes
+
+| Route | Purpose |
 |---|---|
-| `/api/chat` | Send a chat message and receive a JSON response |
-| `/api/chat/stream` | Send a chat message and receive a streaming SSE response |
-
-The Route Handlers forward the user's authorization header when available and communicate with the configured AI Service URL.
+| `/` | Homepage |
+| `/products` | Product catalog |
+| `/product/[id]` | Product detail |
+| `/cart` | Shopping cart |
+| `/checkout` | Checkout |
+| `/payment/result` | Payment result |
+| `/user/settings` | Profile settings |
+| `/user/settings/addresses` | Address management |
+| `/user/orders` | Order history |
+| `/user/orders/[id]` | Order detail |
+| `/auth/login` | Login |
+| `/auth/register` | Registration |
+| `/auth/verify-email` | Email verification instructions/resend |
+| `/auth/email-verified` | Email verification result |
+| `/admin/dashboard` | Administrator dashboard |
+| `/admin/products` | Product management |
+| `/admin/products/create` | Create product |
+| `/admin/products/[id]/edit` | Edit product |
+| `/admin/orders` | Order management |
+| `/admin/orders/[id]` | Order detail and status management |
+| `/api/chat` | Non-streaming chat proxy |
+| `/api/chat/stream` | Streaming chat proxy |
 
 ## Project Structure
 
 ```text
-.
-├── app/
-│   ├── (admin)/
-│   │   └── admin/
-│   │       ├── dashboard/
-│   │       ├── orders/
-│   │       ├── products/
-│   │       └── layout.tsx
-│   │
-│   ├── (shop)/
-│   │   ├── cart/
-│   │   ├── checkout/
-│   │   ├── payment/
-│   │   ├── product/
-│   │   ├── products/
-│   │   ├── user/
-│   │   └── layout.tsx
-│   │
-│   ├── api/
-│   │   └── chat/
-│   │       ├── route.ts
-│   │       └── stream/
-│   │           └── route.ts
-│   │
-│   ├── auth/
-│   │   ├── login/
-│   │   ├── register/
-│   │   ├── verify-email/
-│   │   └── email-verified/
-│   │
-│   ├── globals.css
-│   └── layout.tsx
-│
-├── components/
-│   ├── admin/
-│   ├── auth/
-│   ├── chatbot/
-│   ├── shared/
-│   └── ui/
-│
-├── features/
-│   ├── cart/
-│   ├── checkout/
-│   ├── home/
-│   ├── orders/
-│   ├── payment/
-│   └── products/
-│
-├── lib/
-│   ├── api/
-│   │   └── client.ts
-│   ├── services/
-│   ├── stores/
-│   └── utils.ts
-│
-├── types/
-│
-├── public/
-│
-├── next.config.ts
-├── package.json
-└── tsconfig.json
+app/                  # App Router pages, layouts, and Route Handlers
+  (shop)/              # Customer-facing routes
+  (admin)/              # Administrator routes
+  auth/                 # Authentication routes
+  api/chat/             # AI chat proxy endpoints
+components/             # Shared, UI, auth, admin, and chatbot components
+features/               # Feature-specific stateful components and views
+lib/api/                # Centralized Laravel API client
+lib/services/           # Domain API and chat services
+lib/stores/             # Zustand stores and providers
+types/                  # Shared TypeScript types
 ```
 
-### Folder Responsibilities
+## Tech Stack
 
-| Folder | Responsibility |
+| Area | Technology |
 |---|---|
-| `app/` | Application routing, layouts, and API Route Handlers |
-| `components/` | Reusable UI components |
-| `features/` | Feature-specific UI and business logic |
-| `lib/api/` | Centralized API client |
-| `lib/services/` | API communication and service functions |
-| `lib/stores/` | Zustand state management |
-| `types/` | Shared TypeScript interfaces and types |
-| `public/` | Static assets such as images and logos |
+| Framework | Next.js 16.4.0 |
+| UI library | React 19.3.0 |
+| Language | TypeScript 5.9.3 |
+| Styling | Tailwind CSS 4.3.3 |
+| State management | Zustand 5.0.15 |
+| UI foundation | shadcn/ui, Base UI |
+| Icons | Lucide React |
+| Markdown rendering | react-markdown, remark-gfm |
+| Notifications | Sonner |
+
+Versions are taken from the uploaded `package.json` and lockfile snapshot.
+
+## Environment Variables
+
+Create `.env.local` in the project root:
+
+```env
+# Laravel API base URL, including the /api path
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+
+# Server-side URL used by Next.js chat Route Handlers
+AI_SERVICE_URL=http://localhost:8001
+
+# Midtrans Snap browser integration
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=your_midtrans_client_key
+NEXT_PUBLIC_MIDTRANS_SNAP_URL=your_midtrans_snap_script_url
+```
+
+Use the actual URLs and keys for the environment being configured. Do not commit `.env.local` or real credentials. The repository snapshot does not include an `.env.example`; adding one is recommended.
 
 ## Getting Started
 
-### Prerequisites
+### Requirements
 
-Make sure the following tools are installed:
+- Node.js 20.9.0 or later (the installed Next.js package declares this minimum).
+- npm.
+- A running Zivo Laravel API for e-commerce features.
+- A running Zivo FastAPI service for AI chat features.
 
-- Node.js
-- npm
-- Git
-
-The Laravel backend and AI Service should also be available if you want to use the complete application functionality.
-
-### 1. Clone the Repository
+### Installation
 
 ```bash
 git clone https://github.com/DefanZp/Zivo-frontEnd-next.git
-
 cd Zivo-frontEnd-next
+npm ci
 ```
 
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure Environment Variables
-
-Create a `.env.local` file in the project root.
-
-```env
-# Laravel Backend API
-NEXT_PUBLIC_API_URL=http://localhost:8000/api
-
-# AI Service
-AI_SERVICE_URL=http://127.0.0.1:8001
-
-# Midtrans
-NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=
-NEXT_PUBLIC_MIDTRANS_SNAP_URL=
-```
-
-Configure each variable according to your local environment.
-
-**Important:**
-
-- `NEXT_PUBLIC_API_URL` is used by the centralized API client.
-- `AI_SERVICE_URL` is used by server-side Next.js Route Handlers to communicate with the AI Service.
-- `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` and `NEXT_PUBLIC_MIDTRANS_SNAP_URL` are used to load the Midtrans Snap script in the browser.
-
-Never expose private API keys or server credentials through `NEXT_PUBLIC_` environment variables.
-
-### 4. Run the Development Server
+Create `.env.local` using the variables above, then start the development server:
 
 ```bash
 npm run dev
 ```
 
-Open the application:
+Open http://localhost:3000.
 
-```text
-http://localhost:3000
-```
-
-The development server supports hot reloading, allowing changes to appear automatically during development.
-
-## Available Scripts
-
-The project includes the following npm scripts:
+### Available Scripts
 
 | Command | Description |
 |---|---|
 | `npm run dev` | Start the development server |
-| `npm run build` | Build the application for production |
+| `npm run build` | Create a production build |
 | `npm run start` | Start the production server |
 | `npm run lint` | Run ESLint |
 
-### Production Build
+## Known Limitations and Follow-ups
 
-Build the application:
+- The admin order list currently includes a `shipped` option, while the shared `OrderStatus` type and the inspected Laravel backend do not support that state. Selecting it can result in a backend validation error. Align the state machine and UI before documenting `shipped` as supported.
+- `next.config.ts` currently allows `next/image` remote images only from `http://localhost:8000/storage/**`. Confirm the deployed Laravel image host and add an exact trusted pattern when required.
+- `dangerouslyAllowLocalIP` is enabled in the current Next.js configuration. Review whether this is necessary for production.
+- The auth token is persisted in local storage; retain server-side authorization and review the XSS implications.
+- No frontend test files or test script were found in the uploaded snapshot. Typecheck, lint, build, and runtime behavior were not executed as part of the source audit.
 
-```bash
-npm run build
-```
+## Related Repositories
 
-Start the production server:
+- [Zivo Backend](https://github.com/DefanZp/Zivo-backEnd) — Laravel REST API and e-commerce business logic.
+- [Zivo AI Service](https://github.com/DefanZp/Zivo-ai) — FastAPI, LangGraph agent, MCP, and RAG.
+- [Zivo n8n](https://github.com/DefanZp/Zivo-n8n) — n8n deployment configuration and automation infrastructure.
 
-```bash
-npm run start
-```
+## Author
 
-## Authentication Flow
+**Defan Zain Pratama** — Full-Stack Developer interested in web applications, backend systems, and AI-powered applications.
 
-Authentication is handled through the Laravel backend using Laravel Sanctum.
-
-The general flow is:
-
-1. The customer submits registration or login credentials.
-2. The frontend sends the request to the Laravel API.
-3. The backend validates the credentials and returns authentication data.
-4. The frontend stores the user information and token using Zustand Persist.
-5. Protected application sections check the authentication state before displaying their content.
-6. The token is attached to authenticated API requests through the service layer.
-
-### Route Protection
-
-The application provides three reusable route guards:
-
-| Guard | Responsibility |
-|---|---|
-| `AuthGuard` | Restricts access to authenticated users |
-| `AdminGuard` | Restricts access to authenticated administrators |
-| `VerifiedGuard` | Restricts access to users with verified email addresses |
-
-These guards are located in:
-
-```text
-components/auth/
-```
-
-## AI Chat Integration
-
-The AI chatbot is available through the customer shopping layout.
-
-It communicates with the AI Service using Next.js Route Handlers, keeping the AI Service URL on the server side.
-
-### Standard Chat
-
-```text
-POST /api/chat
-```
-
-Returns a JSON response from the AI Service.
-
-### Streaming Chat
-
-```text
-POST /api/chat/stream
-```
-
-Uses Server-Sent Events (SSE) to forward streaming responses from the AI Service to the frontend.
-
-Both endpoints support guest requests and authenticated requests. When an authorization token is provided, it is forwarded to the AI Service.
-
-## Payment Integration
-
-The frontend integrates with Midtrans Snap through the Laravel backend.
-
-The general payment flow is:
-
-1. The customer completes checkout.
-2. The frontend sends the checkout request to the Laravel API.
-3. The backend creates the order and payment record.
-4. The frontend requests a Snap token using the payment ID.
-5. The frontend loads the Midtrans Snap script.
-6. The customer completes payment through the Midtrans interface.
-7. The frontend displays the payment result.
-
-Payment status and transaction notifications are handled by the backend.
-
-## Deployment
-
-The application can be deployed to platforms that support Next.js, including Vercel.
-
-For production deployment:
-
-1. Configure the production environment variables.
-2. Set `NEXT_PUBLIC_API_URL` to the production Laravel API URL.
-3. Set `AI_SERVICE_URL` to the production AI Service URL.
-4. Configure the Midtrans client key and Snap script URL.
-5. Build and deploy the application.
-
-Build locally to verify the production build:
-
-```bash
-npm run build
-```
-
-For more information, refer to the [Next.js Deployment Documentation](https://nextjs.org/docs/app/building-your-application/deploying).
-
-## License
-
-This project is part of the Zivo e-commerce platform.
+- GitHub: [@DefanZp](https://github.com/DefanZp)
