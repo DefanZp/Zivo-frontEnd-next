@@ -12,6 +12,8 @@ export async function apiClient<T>(
 
     headers.set("Accept", "application/json");
 
+    headers.set("ngrok-skip-browser-warning", "true");
+
     if (options?.body instanceof FormData) {
         headers.delete("Content-Type");
     } else if (!headers.has("Content-Type")) {
