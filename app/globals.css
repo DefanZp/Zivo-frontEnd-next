@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* =========================================================
-   SHADCN / BASE UI THEME
+    SHADCN / BASE UI THEME
    ========================================================= */
 
 @theme inline {
